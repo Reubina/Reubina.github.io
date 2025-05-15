@@ -1,0 +1,91 @@
+# Load the content of the existing index.html file
+with open('index.html', 'r') as file:
+    index_content = file.read()
+
+# Add the link to admin.html at the bottom of the index.html file
+index_content += '\n<a href="admin.html">Add movie to schedule</a>'
+
+# Save the updated index.html file
+with open('index.html', 'w') as file:
+    file.write(index_content)
+
+# Create the admin.html file with the form to add a movie to the schedule
+admin_content = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Add Movie to Schedule</title>
+    <script>
+        async function fetchMovieDetails() {
+            const title = document.getElementById('title').value;
+            const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=YOUR_TMDB_API_KEY&query=${title}`);
+            const data = await response.json();
+            if (data.results.length > 0) {
+                const movie = data.results[0];
+                document.getElementById('poster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+                document.getElementById('runtime').value = movie.runtime;
+                document.getElementById('preview').innerHTML = `
+                    <h3>${movie.title}</h3>
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title} Poster">
+                    <p>Runtime: ${movie.runtime} minutes</p>
+                `;
+            } else {
+                alert('Movie not found');
+            }
+        }
+
+        function addMovieToSchedule() {
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const runtime = document.getElementById('runtime').value;
+            const poster = document.getElementById('poster').src;
+
+            const movie = {
+                title,
+                date,
+                time,
+                runtime,
+                poster
+            };
+
+            let schedule = localStorage.getItem('schedule');
+            if (!schedule) {
+                schedule = [];
+            } else {
+                schedule = JSON.parse(schedule);
+            }
+
+            schedule.push(movie);
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+            alert('Movie added to schedule');
+        }
+    </script>
+</head>
+<body>
+    <h1>Add Movie to Schedule</h1>
+    <form onsubmit="event.preventDefault(); fetchMovieDetails();">
+        <label for="title">Movie Title:</label>
+        <input type="text" id="title" required>
+        <button type="submit">Fetch Details</button>
+    </form>
+    <div id="preview"></div>
+    <form onsubmit="event.preventDefault(); addMovieToSchedule();">
+        <label for="date">Date:</label>
+        <input type="date" id="date" required>
+        <label for="time">Time:</label>
+        <input type="time" id="time" required>
+        <input type="hidden" id="runtime">
+        <input type="hidden" id="poster">
+        <button type="submit">Add to Schedule</button>
+    </form>
+</body>
+</html>
+'''
+
+# Save the admin.html file
+with open('admin.html', 'w') as file:
+    file.write(admin_content)
+
+print("The admin.html file has been created and the index.html file has been updated.")
+
