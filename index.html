@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Movie Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        .dates-bar {
+            display: flex;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            width: 100%;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            background-color: white;
+        }
+        .date-item {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+            border-radius: 5px;
+            min-width: 70px;
+            text-align: center;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .date-item.selected {
+            background-color: #007bff;
+            color: white;
+        }
+        .date-item.disabled {
+            background-color: #ddd;
+            color: #888;
+            cursor: default;
+        }
+        .show-all-dates {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #007bff;
+            color: #007bff;
+            border-radius: 5px;
+            margin-left: 5px;
+        }
+        .movie-list-container {
+            flex: 1;
+            width: 100%;
+            overflow-y: auto;
+            padding-top: 10px;
+        }
+        .movie-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+        .movie-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .movie-card img {
+            width: 100%;
+            max-width: 200px;
+            border-radius: 5px;
+        }
+        .movie-card h3 {
+            margin: 10px 0 5px;
+            font-size: 1.2em;
+        }
+        .movie-card p {
+            margin: 5px 0;
+            text-align: center;
+        }
+        .showtime {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 5px 0 0;
+            text-align: center;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .modal-header {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .modal-body {
+            margin-bottom: 10px;
+        }
+        .screen {
+            background-color: #444;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .seat-map {
+            display: grid;
+            grid-template-columns: repeat(9, 30px);
+            gap: 5px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .seat {
+            width: 30px;
+            height: 30px;
+            background-color: #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .seat.selected {
+            background-color: #007bff;
+            color: white;
+        }
+        .selected-seats {
+            margin-top: 10px;
+        }
+        .view-all-dates {
+            cursor: pointer;
+            color: #007bff;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+        .footer-text {
+            margin-top: 30px;
+            font-size: 1.1em;
+            text-align: center;
+            color: #444;
+        }
+        .blank-space {
+            height: 100px; /* Adjust height as needed */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Book a Movie</h1>
+        <p style="color:red;">All Movies £2.50</p>
+        <div class="dates-bar" id="datesBar"></div>
+        <div class="movie-list-container">
+            <div class="movie-list" id="movieList">
+                <!-- Movie cards will be dynamically inserted here based on the selected date -->
+            </div>
+            <div class="footer-text">Bacine with Recliner Seats</div>
+            <div class="footer-text">Adverts are around between 15 - 25 minutes before the start of the film</div>
+            <div class="blank-space"></div>
+        </div>
+    </div>
+
+    <!-- Modal for showtime details -->
+    <div id="showtimeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle"></div>
+            <div class="modal-body" id="modalBody">
+                <p id="showtimeDetails"></p>
+                <p id="priceDetails"></p>
+                <div class="screen">Screen</div>
+                <div class="seat-map" id="seatMap"></div>
+                <div class="selected-seats" id="selectedSeats">Selected Seats: 0</div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const datesBar = document.getElementById('datesBar');
+        const movieList = document.getElementById('movieList');
+        const showtimeModal = document.getElementById('showtimeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const showtimeDetails = document.getElementById('showtimeDetails');
+        const priceDetails = document.getElementById('priceDetails');
+        const seatMap = document.getElementById('seatMap');
+        const selectedSeats = document.getElementById('selectedSeats');
+        const closeModal = document.getElementById('closeModal');
+
+        // Movie information
+        const movieInfo = {
+            "Death of a Unicorn": { poster: "https://m.media-amazon.com/images/M/MV5BNjUzMjhkZjktNTU5Mi00MzhmLWJhMTQtZjhkYjczOTEzM2M5XkEyXkFqcGc@._V1_.jpg", length: "1h 48m" },
+            "Drop": { poster: "https://m.media-amazon.com/images/M/MV5BNGU1ZjM1MmUtODVkYy00ZDhiLTg1OTYtYWEwOGMwNGY3NzZkXkEyXkFqcGc@._V1_.jpg", length: "1h 40m" },
+            "The Friend": { poster: "https://m.media-amazon.com/images/M/MV5BNTNjODBhNTEtNzJkMC00ZjY1LTkyOWItNzA2NTYxZTY4ZTYwXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "2h 00m" },
+            "Another Simple Favour": { poster: "https://m.media-amazon.com/images/M/MV5BMDBhNTg1MWMtMDc5Ni00YTk1LWFjNGUtMmE2Y2Q5MGQ2M2Q2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "2h 0m" },
+            "The Ballad of Wallis Island": { poster: "https://m.media-amazon.com/images/M/MV5BODZlMjExYTAtYmJjNi00NzdjLTg3YzMtYTE1YTNlZDRhMWU2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "1h 40m" },
+            "Warfare": { poster: "https://lh3.googleusercontent.com/proxy/ucZdSmTXKuh048TMLwJH9ximfkdj7ggWeze9-DEzyHDENqViepV7A9rf93HnbqVelmbCu9yUGo8lrtJIlft91ObYAYJ2_WnNGw", length: "1h 36m" },
+            "The Penguin Lessons": { poster: "https://upload.wikimedia.org/wikipedia/en/c/c7/The_Penguin_Lessons_poster.jpg", length: "1h 50m" },
+            "The Lord of the Rings: The War of the Rohirrim": { poster: "https://m.media-amazon.com/images/M/MV5BMTUyMjliNjctZmVmZi00Mjk4LWJiYTAtZGRmNDQ5ODUzNjgwXkEyXkFqcGc@._V1_.jpg", length: "2h 14m" },
+            "Wicked": { poster: "https://m.media-amazon.com/images/M/MV5BOWMwYjYzYmMtMWQ2Ni00NWUwLTg2MzAtYzkzMDBiZDIwOTMwXkEyXkFqcGc@._V1_.jpg", length: "2h 40m" },
+            "Flow": { poster: "https://m.media-amazon.com/images/M/MV5BOTM5ODBlOTAtYjcwZi00YzkzLWIzODEtMTM2MTZlNDFmMWU2XkEyXkFqcGc@._V1_.jpg", length: "1h 25m" },
+            "The Fire Inside": { poster: "https://m.media-amazon.com/images/M/MV5BYjI4YmU1MTAtOGVkZi00NWI5LTljMGItZjhlYWU2YzEzNzg1XkEyXkFqcGc@._V1_QL75_UX190_CR0,0,190,281_.jpg", length: "1h 49m" },
+            "Better Man": { poster: "https://m.media-amazon.com/images/M/MV5BYWU3YzU0NTItMGVlYi00YTFmLWE5MmQtNjg4ODQ3ZWYyNjRkXkEyXkFqcGc@._V1_.jpg", length: "2h 16m" },
+            "Hard Truths": { poster: "https://m.media-amazon.com/images/M/MV5BZTBmNzBlZGYtMTJjMC00YzdiLWFmOGMtZGQ1OWZjYWUxNjI2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "1h 37m" },
+            "One Of Them Days": { poster: "https://m.media-amazon.com/images/M/MV5BNjI3OGIyYTYtN2QzZC00YzZiLThjOTktM2QyYThlZTM3NjYzXkEyXkFqcGc@._V1_.jpg", length: "1h 37m" },
+            "The Brutalist": { poster: "https://m.media-amazon.com/images/M/MV5BZWY1YTE0ZWItZWM3MS00MDQxLTg5YjAtOGJjYTk2ZThiMjBkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "3h 35m" },
+            "Presence": { poster: "https://m.media-amazon.com/images/M/MV5BMDM4OWQzNzYtODA2MC00NzllLWE1MWUtMTdhMTQwMWEyM2RkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "1h 21m" },
+            "A Complete Unknown (2024)": { poster: "https://m.media-amazon.com/images/M/MV5BYTA2NTA5NDYtMzlkOC00MTQxLWI0NDQtMzk2M2YzMGE4MTkxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "2h 21m" },
+            "Sneaks": { poster: "https://m.media-amazon.com/images/M/MV5BNWU1YzM3NTMtYmYwNC00M2U1LWJlZjctMjAwZTgwY2Q4ODYxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", length: "1h 33m" },
+        };
+
+        // Showtimes by date
+        const showtimes = {
+            "2025-02-25": [
+                { title: "Presence", times: ["10:30 AM"] },
+            ],
+            "2025-05-01": [
+                { title: "Death of a Unicorn", times: ["4:30 PM","6:40 PM"] },
+            ],
+            "2025-05-02": [
+                { title: "Death of a Unicorn", times: ["5:00 PM"] },
+                { title: "Drop", times: ["7:20 PM"] },
+                { title: "Another Simple Favour", times: ["9:35 PM"] }
+            ],
+            "2025-05-03": [
+                { title: "The Penguin Lessons", times: ["10:40 AM"] },
+                { title: "Sneaks", times: ["1:10 PM"] },
+                { title: "The Friend", times: ["3:10 PM"] },
+                { title: "Presence", times: ["6:00 PM"] }
+            ],
+            "2025-05-06": [
+                { title: "The Ballad of Wallis Island", times: ["12:30 PM"] },
+                { title: "Death of a Unicorn", times: ["3:40 PM","5:40 PM"] },
+                { title: "Presence", times: ["8:00 PM"] }
+
+            ]
+        };
+
+        function createDatesBar() {
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dateString = date.toISOString().split('T')[0];
+                const dateItem = document.createElement('div');
+                dateItem.classList.add('date-item');
+                dateItem.dataset.date = dateString;
+
+                // Determine the text to display for today and tomorrow
+                if (i === 0) {
+                    dateItem.textContent = "Today";
+                } else if (i === 1) {
+                    dateItem.textContent = "Tomorrow";
+                } else {
+                    dateItem.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }
+
+                // Check if there are showtimes for this date
+                if (showtimes[dateString] && showtimes[dateString].length > 0) {
+                    dateItem.classList.remove('disabled');
+                } else {
+                    dateItem.classList.add('disabled');
+                }
+
+                dateItem.addEventListener('click', function() {
+                    if (dateItem.classList.contains('disabled')) return; // Do nothing if the date is disabled
+
+                    document.querySelectorAll('.date-item').forEach(item => item.classList.remove('selected'));
+                    dateItem.classList.add('selected');
+                    populateMovies(dateString);
+                });
+
+                datesBar.appendChild(dateItem);
+            }
+
+            // Add "Show All Dates" button
+            const showAllDatesButton = document.createElement('div');
+            showAllDatesButton.classList.add('show-all-dates');
+            showAllDatesButton.textContent = 'Show All Dates';
+            showAllDatesButton.addEventListener('click', function() {
+                document.querySelectorAll('.date-item').forEach(item => item.classList.remove('selected'));
+                populateAllMovies();
+            });
+
+            datesBar.appendChild(showAllDatesButton);
+
+            // Automatically select today's date
+            const todayDateString = today.toISOString().split('T')[0];
+            const todayDateItem = document.querySelector(`.date-item[data-date="${todayDateString}"]`);
+            if (todayDateItem) {
+                todayDateItem.classList.add('selected');
+                populateMovies(todayDateString);
+            }
+        }
+
+
+        function populateMovies(selectedDate) {
+            movieList.innerHTML = '';
+            const moviesForDate = showtimes[selectedDate] || [];
+            moviesForDate.forEach(show => {
+                const movie = movieInfo[show.title];
+                const movieCard = createMovieCard(movie, show.title, [{ date: selectedDate, times: show.times }]);
+                movieList.appendChild(movieCard);
+            });
+        }
+
+        function populateAllMovies() {
+            movieList.innerHTML = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Clear the time portion for accurate comparison
+            const allMovies = {};
+
+            for (const date in showtimes) {
+                const showDate = new Date(date);
+                if (showDate >= today) {
+                    showtimes[date].forEach(show => {
+                        if (!allMovies[show.title]) {
+                            allMovies[show.title] = [];
+                        }
+                        allMovies[show.title].push({ date: date, times: show.times });
+                    });
+                }
+            }
+
+            for (const title in allMovies) {
+                const movie = movieInfo[title];
+                const movieCard = createMovieCard(movie, title, allMovies[title]);
+                movieList.appendChild(movieCard);
+            }
+        }
+
+        function createMovieCard(movie, title, showtimes) {
+            const movieCard = document.createElement('div');
+            movieCard.classList.add('movie-card');
+
+            const moviePoster = document.createElement('img');
+            moviePoster.src = movie.poster;
+            moviePoster.alt = title;
+
+            const movieTitle = document.createElement('h3');
+            movieTitle.textContent = title;
+
+            const movieLength = document.createElement('p');
+            movieLength.textContent = `Length: ${movie.length}`;
+
+            const showtimeContainer = document.createElement('div');
+            showtimeContainer.classList.add('showtime-container');
+
+            showtimeContainer.appendChild(moviePoster);
+            showtimeContainer.appendChild(movieTitle);
+            showtimeContainer.appendChild(movieLength);
+
+            const upcomingShowtimes = showtimes.slice(0, 3);
+
+            upcomingShowtimes.forEach(show => {
+                const dateLabel = document.createElement('p');
+                dateLabel.textContent = `${new Date(show.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}:`;
+
+                const timesContainer = document.createElement('div');
+                show.times.forEach(time => {
+                    const showtime = document.createElement('div');
+                    showtime.classList.add('showtime');
+                    showtime.textContent = time;
+                    showtime.addEventListener('click', function() {
+                        displayShowtimeDetails(title, time, show.date);
+                    });
+                    timesContainer.appendChild(showtime);
+                });
+
+                showtimeContainer.appendChild(dateLabel);
+                showtimeContainer.appendChild(timesContainer);
+            });
+
+            // Add "View All Dates" button if there are more showtimes
+            if (showtimes.length > 3) {
+                const viewAllDatesButton = document.createElement('div');
+                viewAllDatesButton.classList.add('view-all-dates');
+                viewAllDatesButton.textContent = 'View All Dates';
+                viewAllDatesButton.addEventListener('click', function() {
+                    showtimes.slice(3).forEach(show => {
+                        const dateLabel = document.createElement('p');
+                        dateLabel.textContent = `${new Date(show.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}:`;
+
+                        const timesContainer = document.createElement('div');
+                        show.times.forEach(time => {
+                            const showtime = document.createElement('div');
+                            showtime.classList.add('showtime');
+                            showtime.textContent = time;
+                            showtime.addEventListener('click', function() {
+                                displayShowtimeDetails(title, time, show.date);
+                            });
+                            timesContainer.appendChild(showtime);
+                        });
+
+                        showtimeContainer.appendChild(dateLabel);
+                        showtimeContainer.appendChild(timesContainer);
+                    });
+                    viewAllDatesButton.style.display = 'none';
+                });
+
+                showtimeContainer.appendChild(viewAllDatesButton);
+            }
+
+            movieCard.appendChild(showtimeContainer);
+
+            return movieCard;
+        }
+
+
+        function calculateEndTime(startTime, duration) {
+            const [hours, minutes] = duration.split('h').map(part => parseInt(part.replace('m', '').trim()));
+            const [startHour, startMinute, period] = startTime.match(/(\d+):(\d+) (\w+)/).slice(1);
+            let startTimeDt = new Date();
+            startTimeDt.setHours(period === 'PM' ? parseInt(startHour) + 12 : parseInt(startHour));
+            startTimeDt.setMinutes(parseInt(startMinute));
+            startTimeDt.setSeconds(0);
+            const endTimeDt = new Date(startTimeDt.getTime() + hours * 60 * 60 * 1000 + minutes * 60 * 1000 + 20 * 60 * 1000);
+            return endTimeDt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        function displayShowtimeDetails(title, time, date) {
+            const movieLength = movieInfo[title].length;
+            const endTime = calculateEndTime(time, movieLength);
+            modalTitle.textContent = title;
+            showtimeDetails.textContent = `Showtime: ${time} on ${new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}, Ends at: ${endTime}`;
+            priceDetails.textContent = 'Price: £2.49'; // Example price, for demo use only
+            renderSeatMap();
+            showtimeModal.style.display = 'flex';
+     
+        }
+
+        function renderSeatMap() {
+            seatMap.innerHTML = '';
+            const rows = 6;
+            const columns = 9;
+            for (let i = 0; i < rows * columns; i++) {
+                const seat = document.createElement('div');
+                seat.classList.add('seat');
+                seat.textContent = (i + 1);
+                seat.addEventListener('click', function() {
+                    seat.classList.toggle('selected');
+                    updateSelectedSeats();
+                });
+                seatMap.appendChild(seat);
+            }
+        }
+
+        function updateSelectedSeats() {
+            const selected = document.querySelectorAll('.seat.selected').length;
+            selectedSeats.textContent = `Selected Seats: ${selected}`;
+        }
+
+        closeModal.addEventListener('click', function() {
+            showtimeModal.style.display = 'none';
+        });
+
+        window.onclick = function(event) {
+            if (event.target === showtimeModal) {
+                showtimeModal.style.display = 'none';
+            }
+        }
+
+        createDatesBar();
+    </script>
+</body>
+</html>
